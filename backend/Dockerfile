@@ -5,12 +5,12 @@ FROM maven:3.9-eclipse-temurin-17-alpine AS build
 
 WORKDIR /app
 
-# Cache dependencies
-COPY pom.xml .
+# Copy pom.xml and cache dependencies (from repository root context)
+COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Copy application source code
-COPY src ./src
+COPY backend/src ./src
 
 # Package production executable JAR
 RUN mvn clean package -DskipTests
@@ -28,13 +28,11 @@ RUN addgroup -S spring && adduser -S spring -G spring
 # Copy packaged jar from build stage
 COPY --from=build /app/target/library-management-system-*.jar /app/app.jar
 
-# JVM options optimized for containers (RAM percentage, entropy source)
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
 ENV PORT=8080
 
 EXPOSE 8080
 
-# Switch to non-root user
 USER spring:spring
 
 # Actuator Health Check
